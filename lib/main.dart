@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'providers/gpa_provider.dart';
 import 'screens/home_screen.dart';
+//576EF8
 
 void main() {
   runApp(
@@ -31,6 +31,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// backgroundColor: const Color(0xFFe84132),
-// iconTheme: const IconThemeData(color: Colors.white),

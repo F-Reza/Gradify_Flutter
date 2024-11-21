@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/gpa_provider.dart';
 import '../screens/add_course_screen.dart';
+import 'report_screen.dart';
+import 'semester_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +18,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this); // 6 Semesters
+    _tabController = TabController(length: 8, vsync: this); // 8 Semesters
+
+    // Fetch all courses on initialization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final gpaProvider = Provider.of<GPAProvider>(context, listen: false);
+      gpaProvider.fetchCoursesNew(0);  // Fetch courses for all semesters
+    });
   }
 
   @override
@@ -24,15 +32,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final gpaProvider = Provider.of<GPAProvider>(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFf2f7fd),
       appBar: AppBar(
-        title: Text('Gradify'),
-        centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: List.generate(
-            6,
-                (index) => Tab(text: 'Semester ${index + 1}'),
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: const Color(0xFFf2f7fd),
+        iconTheme: const IconThemeData(color: Color(0xFFf2f7fd)),
+        title: const Text(
+          'Gradify',
+          style: TextStyle(
+            fontSize: 25,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.area_chart, size: 35),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder:(context) => const ReportScreen()));
+            },
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: Colors.black,
+              labelColor: Colors.blueAccent,
+              unselectedLabelColor: Colors.grey,
+              tabs: List.generate(
+                8,
+                    (index) => Tab(text: 'Semester ${index + 1}'),
+              ),
+            ),
           ),
         ),
       ),
@@ -51,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    Text(
+                    const Text(
                       'Total GPA',
                       style: TextStyle(
                         fontSize: 20,
@@ -59,10 +94,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      gpaProvider.totalGPA.toStringAsFixed(2), // Updated reference
-                      style: TextStyle(
+                      gpaProvider.totalGPA.toStringAsFixed(2),
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -73,11 +108,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
           ),
+          // Semester-specific views
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: List.generate(
-                6,
+                8,
                     (index) => SemesterView(semesterIndex: index),
               ),
             ),
@@ -85,79 +121,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddCourseScreen()),
+            MaterialPageRoute(builder: (context) => const AddCourseScreen()),
           );
         },
       ),
-    );
-  }
-}
-
-class SemesterView extends StatelessWidget {
-  final int semesterIndex;
-
-  SemesterView({required this.semesterIndex});
-
-  @override
-  Widget build(BuildContext context) {
-    final gpaProvider = Provider.of<GPAProvider>(context);
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            'Your GPA for Semester ${semesterIndex + 1}: '
-                '${gpaProvider.calculateSemesterGPA(semesterIndex + 1).toStringAsFixed(2)}', // Updated reference
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Expanded(
-          child: gpaProvider.getCoursesBySemester(semesterIndex + 1).isEmpty // Updated reference
-              ? const Center(
-            child: Text(
-              'No courses added yet!',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          )
-              : ListView.builder(
-            itemCount: gpaProvider.getCoursesBySemester(semesterIndex + 1).length, // Updated reference
-            itemBuilder: (context, index) {
-              final course = gpaProvider.getCoursesBySemester(semesterIndex + 1)[index];
-              return Card(
-                elevation: 4,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  title: Text(course.courseName),
-                  subtitle: Text(
-                      'Credits: ${course.creditHours}, Grade: ${course.grade}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.red),
-                        onPressed: () {
-                          //need here edit action
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          gpaProvider.removeCourse(semesterIndex + 1, index);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }

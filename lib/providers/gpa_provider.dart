@@ -1,40 +1,74 @@
 import 'package:flutter/material.dart';
+import '../db/database_helper.dart';
 import '../models/course.dart';
 import '../models/gpa_calculator.dart';
 
 class GPAProvider with ChangeNotifier {
-  // Map to hold courses by semester
-  final Map<int, List<Course>> _semesterCourses = {};
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  // Retrieve courses for a specific semester
-  List<Course> getCoursesBySemester(int semester) {
-    return _semesterCourses[semester] ?? [];
+  List<Course> _courses = [];
+  bool _isLoading = false;
+
+  List<Course> get courses => _courses;
+  bool get isLoading => _isLoading;
+
+  GPAProvider() {
+    _loadCourses();
   }
 
-  // Add a course to a specific semester
-  void addCourse(int semester, Course course) {
-    if (!_semesterCourses.containsKey(semester)) {
-      _semesterCourses[semester] = [];
+  // Fetch all courses initially
+  Future<void> _loadCourses() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      _courses = await _dbHelper.getCoursesForAllSemesters();
+    } catch (e) {
+      print("Error loading courses: $e");
+      _courses = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    _semesterCourses[semester]!.add(course);
+  }
+
+  // Fetch courses by semester
+  Future<void> fetchCoursesNew(int semester) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      if (semester == 0) {
+        _courses = await _dbHelper.getCoursesForAllSemesters();
+      } else {
+        _courses = await _dbHelper.getCourses(semester);
+      }
+    } catch (e) {
+      print("Error fetching courses: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Add a new course
+  Future<void> addCourse(Course course) async {
+    await _dbHelper.insertCourse(course);
+    await fetchCoursesNew(course.semester);
     notifyListeners();
   }
 
-  // Remove a course from a specific semester
-  void removeCourse(int semester, int index) {
-    if (_semesterCourses.containsKey(semester)) {
-      _semesterCourses[semester]!.removeAt(index);
-      notifyListeners();
-    }
+  // Delete a course
+  Future<void> deleteCourse(int id) async {
+    await _dbHelper.deleteCourse(id);
+    await _loadCourses(); // Refresh all courses
+    notifyListeners();
   }
 
-  void updateCourse(int semester, int index, Course updatedCourse) {
-    if (_semesterCourses.containsKey(semester)) {
-      _semesterCourses[semester]![index] = updatedCourse;
-      notifyListeners();
-    }
+  // Update an existing course
+  Future<void> updateCourse(Course course) async {
+    await _dbHelper.updateCourse(course);
+    await _loadCourses(); // Refresh all courses
+    notifyListeners();
   }
-
 
   // Calculate GPA for a specific semester
   double calculateSemesterGPA(int semester) {
@@ -42,23 +76,22 @@ class GPAProvider with ChangeNotifier {
     return GPACalculator(courses).calculateGPA();
   }
 
-  // Calculate total GPA across all semesters
+  // Method to get courses by semester
+  List<Course> getCoursesBySemester(int semester) {
+    return _courses.where((course) => course.semester == semester).toList();
+  }
+
+  // Calculate overall GPA
   double get totalGPA {
     double totalQualityPoints = 0.0;
     int totalCreditHours = 0;
 
-    _semesterCourses.forEach((semester, courses) {
-      for (var course in courses) {
-        totalQualityPoints += course.grade * course.creditHours;
-        totalCreditHours += course.creditHours;
-      }
-    });
+    for (var course in _courses) {
+      totalQualityPoints += course.grade * course.creditHours;
+      totalCreditHours += course.creditHours;
+    }
 
     return totalCreditHours > 0 ? totalQualityPoints / totalCreditHours : 0.0;
   }
-
-  // Getter to retrieve all courses (optional, useful for debugging)
-  List<Course> get allCourses {
-    return _semesterCourses.values.expand((courses) => courses).toList();
-  }
 }
+

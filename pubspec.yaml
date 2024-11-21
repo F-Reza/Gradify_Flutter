@@ -11,6 +11,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   provider:
+  path:
+  sqflite:
+  fl_chart:
 
 dev_dependencies:
   flutter_test:

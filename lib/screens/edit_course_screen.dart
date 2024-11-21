@@ -1,35 +1,44 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../models/course.dart';
 import '../providers/gpa_provider.dart';
 
-class AddCourseScreen extends StatefulWidget {
-  const AddCourseScreen({super.key});
+class EditCourseScreen extends StatefulWidget {
+  final Course course;
+
+  const EditCourseScreen({super.key, required this.course});
 
   @override
-  _AddCourseScreenState createState() => _AddCourseScreenState();
+  _EditCourseScreenState createState() => _EditCourseScreenState();
 }
 
-class _AddCourseScreenState extends State<AddCourseScreen> {
+
+class _EditCourseScreenState extends State<EditCourseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _courseNameController = TextEditingController();
   final _creditHoursController = TextEditingController();
   final _gradeController = TextEditingController();
-  int _selectedSemester = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _courseNameController.text = widget.course.courseName;
+    _creditHoursController.text = widget.course.creditHours.toString();
+    _gradeController.text = widget.course.grade.toString();
+  }
+
 
   @override
   Widget build(BuildContext context) {
     final gpaProvider = Provider.of<GPAProvider>(context, listen: false);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFf2f7fd),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.blueAccent,
-        foregroundColor: const Color(0xFFf2f7fd),
-        iconTheme: const IconThemeData(color: Color(0xFFf2f7fd)),
-        title: const Text('Add Course'),
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Edit Course'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -38,33 +47,7 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
             key: _formKey,
             child: Column(
               children: [
-                Image.asset('images/add1.png',width: 300,),
-                DropdownButtonFormField<int>(
-                  value: _selectedSemester,
-                  items: List.generate(
-                    8,
-                        (index) => DropdownMenuItem(
-                          alignment: Alignment.center,
-                      value: index + 1,
-                      child: Text('Semester ${index + 1}'),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedSemester = value ?? 1;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.auto_graph_outlined),
-                    filled: true,
-                    fillColor: Colors.white,
-                    labelText: 'Select Semester',
-                    border: OutlineInputBorder(
-                    ),
-                  ),
-                  dropdownColor: Colors.white.withOpacity(0.9),
-                ),
-                const SizedBox(height: 20),
+                Image.asset('images/add1.jpg',width: 200,),
                 TextFormField(
                   controller: _courseNameController,
                   decoration: const InputDecoration(
@@ -124,14 +107,14 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      await gpaProvider.addCourse(
-                        Course(
-                          courseName: _courseNameController.text,
-                          creditHours: int.parse(_creditHoursController.text.trim()),
-                          grade: double.parse(_gradeController.text.trim()),
-                          semester: _selectedSemester,
-                        ),
+                      final updatedCourse = Course(
+                        id: widget.course.id, // Retain the course ID
+                        courseName: _courseNameController.text,
+                        creditHours: int.parse(_creditHoursController.text.trim()),
+                        grade: double.parse(_gradeController.text.trim()),
+                        semester: widget.course.semester,
                       );
+                      await gpaProvider.updateCourse(updatedCourse);
                       Navigator.pop(context);
                     }
                   },
@@ -143,8 +126,9 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Add Course'),
+                  child: const Text('Update Course'),
                 ),
+        
               ],
             ),
           ),
