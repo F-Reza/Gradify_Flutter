@@ -4,8 +4,7 @@ A new Flutter project Gradify - GPA Calculator App.
 
 ## Getting Started
 
-<img src="https://github.com/F-Reza/Gradify_Flutter/blob/main/Untitled-1.png" width="49%"> 
-<img src="https://github.com/F-Reza/Gradify_Flutter/blob/main/Untitled-2.png" width="49%"> 
+<img src="https://github.com/F-Reza/Gradify_Flutter/blob/main/Untitled-1.png" width="47%"> <img src="https://github.com/F-Reza/Gradify_Flutter/blob/main/Untitled-2.png" width="47%"> 
 
 This project is a starting point for a Flutter application.
 
